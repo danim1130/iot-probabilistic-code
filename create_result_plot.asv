@@ -1,0 +1,16 @@
+node_count = 10;
+prefix = 'IoT_precise_energy/run_';
+%files = dir(strcat('results/', 'run_topography.txt'));%prefix, int2str(node_count), '_', '*.txt'));
+files = dir(strcat(prefix, int2str(node_count), '_', '*.txt'));
+result_matrix = [];
+for i=1:length(files)
+    result_matrix = [result_matrix; readmatrix(strcat('IoT_precise_energy/', files(i).name))];
+end
+%boxplot(result_matrix(:,(1:9)), "Labels", ["Leach" "Direct" "2-hop" "3-hop" "4-hop" "5-hop" "6-hop" "7-hop" "8-hop"]);
+hold on;
+bar(mean(result_matrix))
+ylabel("Sent message");
+xticks([1 2 3 4 5 6 7 8 9]);
+xlim([0.5 9.5]);
+xticklabels(["LEACH" "Direct" "2-hop" "3-hop" "4-hop" "5-hop" "6-hop" "7-hop" "8-hop"])
+%title("Average message count for 100 nodes", "FontWeight","normal", "FontSize", 10)

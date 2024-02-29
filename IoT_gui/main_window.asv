@@ -1,0 +1,336 @@
+function varargout = main_window(varargin)
+% MAIN_WINDOW MATLAB code for main_window.fig
+%      MAIN_WINDOW, by itself, creates a new MAIN_WINDOW or raises the existing
+%      singleton*.
+%
+%      H = MAIN_WINDOW returns the handle to a new MAIN_WINDOW or the handle to
+%      the existing singleton*.
+%
+%      MAIN_WINDOW('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in MAIN_WINDOW.M with the given input arguments.
+%
+%      MAIN_WINDOW('Property','Value',...) creates a new MAIN_WINDOW or raises the
+%      existing singleton*.  Starting from the left, property value pairs are
+%      applied to the GUI before main_window_OpeningFcn gets called.  An
+%      unrecognized property name or invalid value makes property application
+%      stop.  All inputs are passed to main_window_OpeningFcn via varargin.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+
+% Edit the above text to modify the response to help main_window
+
+% Last Modified by GUIDE v2.5 05-Mar-2020 12:22:25
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @main_window_OpeningFcn, ...
+                   'gui_OutputFcn',  @main_window_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+    gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+
+% --- Executes just before main_window is made visible.
+function main_window_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   command line arguments to main_window (see VARARGIN)
+
+% Choose default command line output for main_window
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% UIWAIT makes main_window wait for user response (see UIRESUME)
+% uiwait(handles.figure1);
+
+
+% --- Outputs from this function are returned to the command line.
+function varargout = main_window_OutputFcn(hObject, eventdata, handles) 
+% varargout  cell array for returning output args (see VARARGOUT);
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Get default command line output from handles structure
+varargout{1} = handles.output;
+
+
+% --- Executes on button press in pushbutton1.
+function pushbutton1_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(hObject,'Enable','off')
+error_eps = eval(get(handles.error_field, 'String'));
+energy = eval(get(handles.energy_field, 'String'));
+sample_num = eval(get(handles.sample_field, 'String'));
+k_value = eval(get(handles.k_value, 'String'));
+global node_energy_constants;
+    results = iot_main(node_energy_constants, length(node_energy_constants), energy, error_eps, sample_num, k_value);
+if (k_value == 0)
+    set(handles.onehop, 'string', mat2str(results(1, :)));
+    set(handles.twohop, 'string', mat2str(results(2, :)));
+else
+    set(handles.khop, 'string', mat2str(results(1, :)));
+end
+set(hObject,'Enable','on')
+
+
+% --- Executes on button press in pushbutton2.
+function pushbutton2_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global node_energy_constants;
+global BS;
+node_count = eval(get(handles.point_num, 'String'));
+BS = node_count;
+node_coordinates = rand(node_count,2);
+
+alpha = 2;
+teta = 1;
+sigma_power_z = 100;
+D=squareform(pdist(node_coordinates));
+node_energy_constants = -1 * (D.^alpha)*teta*sigma_power_z;
+showNodesOnAxes(handles.node_place, node_coordinates);
+
+
+% --- Executes on button press in city_button.
+function city_button_Callback(hObject, eventdata, handles)
+% hObject    handle to city_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+columns = [0.2 0.3 0.6 0.8];
+rows = [0.1 0.3 0.5 0.7 0.9 0.95];
+node_coordinates = combvec(rows, columns)'
+
+alpha = 2;
+teta = 1;
+sigma_power_z = 100;
+D=squareform(pdist(node_coordinates));
+node_energy_constants = -1 * (D.^alpha)*teta*sigma_power_z;
+for i=1:length(node_coordinates)
+    for j=1:length(node_coordinates)
+        node_a = node_coordinates(i);
+        node_b = node_coordinates(j);
+        if node_a(1) ~= node_b(1) && node_a(2) ~= node_b(2)
+            node_energy_constants(i,j) = node_energy_constants(i,j) * 1000;
+        end
+    end
+end
+showNodesOnAxes(handles.node_place, node_coordinates);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function showNodesOnAxes(figure_h, node_coordinates)
+global BS;
+scatter_colors = zeros(length(node_coordinates), 3);
+%scatter_colors(SOURCE) = 0;
+scatter_colors(BS, :) = [1 0 0];
+scatter_colors(1, :) = [0 0 1];
+axes(figure_h);
+scatter(node_coordinates(:,1), node_coordinates(:,2), 10, scatter_colors, "filled")
+
+
+function point_num_Callback(hObject, eventdata, handles)
+% hObject    handle to point_num (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of point_num as text
+%        str2double(get(hObject,'String')) returns contents of point_num as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function point_num_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to point_num (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function energy_field_Callback(hObject, eventdata, handles)
+% hObject    handle to energy_field (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of energy_field as text
+%        str2double(get(hObject,'String')) returns contents of energy_field as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function energy_field_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to energy_field (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function sample_field_Callback(hObject, eventdata, handles)
+% hObject    handle to sample_field (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of sample_field as text
+%        str2double(get(hObject,'String')) returns contents of sample_field as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function sample_field_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sample_field (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function error_field_Callback(hObject, eventdata, handles)
+% hObject    handle to error_field (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of error_field as text
+%        str2double(get(hObject,'String')) returns contents of error_field as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function error_field_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to error_field (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function compression_Callback(hObject, eventdata, handles)
+% hObject    handle to compression (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of compression as text
+%        str2double(get(hObject,'String')) returns contents of compression as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function compression_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to compression (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in run_leach.
+function run_leach_Callback(hObject, eventdata, handles)
+% hObject    handle to run_leach (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(hObject,'Enable','off')
+error_eps = eval(get(handles.error_field, 'String'));
+energy = eval(get(handles.energy_field, 'String'));
+sample_num = eval(get(handles.sample_field, 'String'));
+p_node_election = eval(get(handles.node_election, 'String'));
+compression = eval(get(handles.compression, 'String'));
+global node_energy_constants;
+    results = leach_main(node_energy_constants, length(node_energy_constants), energy, error_eps, sample_num, p_node_election, 1-compression);
+    set(handles.leach, 'string', mat2str(results));
+set(hObject,'Enable','on')
+
+
+
+function node_election_Callback(hObject, eventdata, handles)
+% hObject    handle to node_election (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of node_election as text
+%        str2double(get(hObject,'String')) returns contents of node_election as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function node_election_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to node_election (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function k_value_Callback(hObject, eventdata, handles)
+% hObject    handle to k_value (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of k_value as text
+%        str2double(get(hObject,'String')) returns contents of k_value as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function k_value_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to k_value (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
